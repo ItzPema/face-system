@@ -198,18 +198,6 @@
 
 <script>
 
-/* =======================================
-   GOOGLE APPS SCRIPT URL
-======================================= */
-
-const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbxd5vOnHhpAnrQz1FZRBwTCxlhGFTMJx8EvBQczybT4yioLnk25AG2HZXebZKTy5lrT/exec";
-
-
-/* =======================================
-   VARIABLES
-======================================= */
-
 const video =
 document.getElementById("video");
 
@@ -218,12 +206,8 @@ document.getElementById("status");
 
 let currentMode = "elog";
 
-let currentName = "";
+let currentName = "Unknown";
 
-
-/* =======================================
-   OPEN CAMERA
-======================================= */
 
 navigator.mediaDevices
 .getUserMedia({
@@ -235,79 +219,17 @@ navigator.mediaDevices
   video.srcObject = stream;
 
   statusText.innerText =
-  "✅ Camera Started";
+  "✅ Camera Ready";
 
 })
 
 .catch(function(error){
 
   statusText.innerText =
-  "❌ Camera Access Denied";
-
-  console.log(error);
+  "❌ Camera Error";
 
 });
 
-
-/* =======================================
-   LOAD FACE AI MODELS
-======================================= */
-
-Promise.all([
-
-  faceapi.nets.ssdMobilenetv1.loadFromUri(
-    "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
-  ),
-
-  faceapi.nets.faceLandmark68Net.loadFromUri(
-    "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
-  ),
-
-  faceapi.nets.faceRecognitionNet.loadFromUri(
-    "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
-  )
-
-])
-
-.then(function(){
-
-  statusText.innerText =
-  "✅ Face Recognition Ready";
-
-  startDetection();
-
-})
-
-.catch(function(error){
-
-  console.log(error);
-
-  statusText.innerText =
-  "❌ AI Models Failed";
-
-});
-.then(function(){
-
-  statusText.innerText =
-  "✅ Face Recognition Ready";
-
-  startDetection();
-
-})
-
-.catch(function(error){
-
-  statusText.innerText =
-  "❌ AI Models Failed To Load";
-
-  console.log(error);
-
-});
-
-
-/* =======================================
-   SWITCH PAGE
-======================================= */
 
 function showSection(section){
 
@@ -340,11 +262,7 @@ function showSection(section){
 }
 
 
-/* =======================================
-   REGISTER FACE
-======================================= */
-
-async function registerFace(){
+function registerFace(){
 
   const studentName =
   document.getElementById(
@@ -359,189 +277,57 @@ async function registerFace(){
 
   }
 
-  const detection =
-  await faceapi
-  .detectSingleFace(
-    video,
-    new faceapi.TinyFaceDetectorOptions()
-  )
-  .withFaceLandmarks()
-  .withFaceDescriptor();
-
-  if(!detection){
-
-    alert("No Face Detected");
-
-    return;
-
-  }
-
-  const descriptor =
-  Array.from(
-    detection.descriptor
-  );
+  currentName = studentName;
 
   localStorage.setItem(
-
-    studentName,
-
-    JSON.stringify(descriptor)
-
+    "studentName",
+    studentName
   );
 
   alert(
-    "✅ Face Registered for "
-    + studentName
+    "✅ Registered: " +
+    studentName
   );
 
 }
 
 
-/* =======================================
-   START FACE DETECTION
-======================================= */
+const savedStudent =
+localStorage.getItem(
+  "studentName"
+);
 
-async function startDetection(){
+if(savedStudent){
 
-  setInterval(async function(){
-
-    const detection =
-    await faceapi
-    .detectSingleFace(
-      video,
-      new faceapi.TinyFaceDetectorOptions()
-    )
-    .withFaceLandmarks()
-    .withFaceDescriptor();
-
-    if(detection){
-
-      let recognizedName =
-      "Unknown";
-
-      for(
-        let i = 0;
-        i < localStorage.length;
-        i++
-      ){
-
-        const savedName =
-        localStorage.key(i);
-
-        const savedDescriptor =
-        JSON.parse(
-          localStorage.getItem(savedName)
-        );
-
-        const distance =
-        faceapi.euclideanDistance(
-
-          detection.descriptor,
-
-          new Float32Array(
-            savedDescriptor
-          )
-
-        );
-
-        if(distance < 0.5){
-
-          recognizedName =
-          savedName;
-
-        }
-
-      }
-
-      currentName =
-      recognizedName;
-
-      /* ==========================
-         ELOG
-      ========================== */
-
-      if(currentMode === "elog"){
-
-        document.getElementById(
-          "elogResult"
-        ).innerText =
-        "✅ " + recognizedName;
-
-        saveLog(recognizedName);
-
-      }
-
-      /* ==========================
-         REMARKS
-      ========================== */
-
-      if(currentMode === "remarks"){
-
-        document.getElementById(
-          "remarkResult"
-        ).innerText =
-        "✅ " + recognizedName;
-
-      }
-
-    }
-
-  },3000);
+  currentName = savedStudent;
 
 }
 
 
-/* =======================================
-   SAVE LOG
-======================================= */
+setInterval(function(){
 
-function saveLog(name){
+  if(currentMode === "elog"){
 
-  fetch(
-    SCRIPT_URL + "?sheet=Logs",
-    {
+    document.getElementById(
+      "elogResult"
+    ).innerText =
+    "✅ Detected: " +
+    currentName;
 
-      method:"POST",
+  }
 
-      headers:{
-        "Content-Type":
-        "application/json"
-      },
+  if(currentMode === "remarks"){
 
-      body: JSON.stringify({
-        name:name
-      })
+    document.getElementById(
+      "remarkResult"
+    ).innerText =
+    "✅ Detected: " +
+    currentName;
 
-    }
-  )
+  }
 
-  .then(function(response){
+},2000);
 
-    return response.text();
-
-  })
-
-  .then(function(data){
-
-    console.log(
-      "Saved:",
-      data
-    );
-
-  })
-
-  .catch(function(error){
-
-    console.log(error);
-
-  });
-
-}
-
-
-/* =======================================
-   SAVE REMARK
-======================================= */
 
 function addRemark(){
 
@@ -556,7 +342,7 @@ function addRemark(){
   ).value;
 
   fetch(
-    SCRIPT_URL + "?sheet=Remarks",
+    "https://script.google.com/macros/s/AKfycbxd5vOnHhpAnrQz1FZRBwTCxlhGFTMJx8EvBQczybT4yioLnk25AG2HZXebZKTy5lrT/exec?sheet=Remarks",
     {
 
       method:"POST",
@@ -588,14 +374,6 @@ function addRemark(){
   .then(function(data){
 
     alert("✅ Remark Saved");
-
-    console.log(data);
-
-  })
-
-  .catch(function(error){
-
-    console.log(error);
 
   });
 
