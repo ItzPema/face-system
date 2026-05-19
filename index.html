@@ -1,22 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Student Face System</title>
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+  content="width=device-width, initial-scale=1.0">
+
+  <title>
+    Student Face Recognition System
+  </title>
 
   <!-- FACE API -->
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <script defer
+  src="https://cdn.jsdelivr.net/npm/face-api.js">
+  </script>
 
   <style>
 
     body{
       font-family:Arial;
       background:#f2f2f2;
-      text-align:center;
-      padding:20px;
       margin:0;
+      padding:20px;
+      text-align:center;
     }
 
     .container{
@@ -62,18 +70,19 @@
 
     .section{
       background:#fafafa;
-      margin-top:20px;
       padding:20px;
+      margin-top:20px;
       border-radius:10px;
     }
 
     #status{
-      margin-top:10px;
+      margin-top:15px;
       font-weight:bold;
       color:green;
     }
 
   </style>
+
 </head>
 
 <body>
@@ -81,14 +90,16 @@
 <div class="container">
 
   <h1>
-    📚 Student Face Recognition System
+    📚 Student E-Log & Remarks System
   </h1>
 
   <!-- REGISTER FACE -->
 
   <div class="section">
 
-    <h2>Register Student Face</h2>
+    <h2>
+      Register Student Face
+    </h2>
 
     <input
       type="text"
@@ -104,7 +115,7 @@
 
   </div>
 
-  <!-- BUTTONS -->
+  <!-- SWITCH BUTTONS -->
 
   <button onclick="showSection('elog')">
     📋 E-Log Book
@@ -187,17 +198,17 @@
 
 <script>
 
-/* =========================================
-   GOOGLE SCRIPT URL
-========================================= */
+/* =======================================
+   GOOGLE APPS SCRIPT URL
+======================================= */
 
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbxd5vOnHhpAnrQz1FZRBwTCxlhGFTMJx8EvBQczybT4yioLnk25AG2HZXebZKTy5lrT/exec";
 
 
-/* =========================================
+/* =======================================
    VARIABLES
-========================================= */
+======================================= */
 
 const video =
 document.getElementById("video");
@@ -210,11 +221,12 @@ let currentMode = "elog";
 let currentName = "";
 
 
-/* =========================================
+/* =======================================
    OPEN CAMERA
-========================================= */
+======================================= */
 
-navigator.mediaDevices.getUserMedia({
+navigator.mediaDevices
+.getUserMedia({
   video:true
 })
 
@@ -237,22 +249,22 @@ navigator.mediaDevices.getUserMedia({
 });
 
 
-/* =========================================
-   LOAD AI MODELS
-========================================= */
+/* =======================================
+   LOAD FACE AI MODELS
+======================================= */
 
 Promise.all([
 
   faceapi.nets.tinyFaceDetector.loadFromUri(
-    "https://justadudewhohacks.github.io/face-api.js/models"
+    "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
   ),
 
   faceapi.nets.faceLandmark68Net.loadFromUri(
-    "https://justadudewhohacks.github.io/face-api.js/models"
+    "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
   ),
 
   faceapi.nets.faceRecognitionNet.loadFromUri(
-    "https://justadudewhohacks.github.io/face-api.js/models"
+    "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/"
   )
 
 ])
@@ -264,12 +276,21 @@ Promise.all([
 
   startDetection();
 
+})
+
+.catch(function(error){
+
+  statusText.innerText =
+  "❌ AI Models Failed To Load";
+
+  console.log(error);
+
 });
 
 
-/* =========================================
-   SWITCH SECTION
-========================================= */
+/* =======================================
+   SWITCH PAGE
+======================================= */
 
 function showSection(section){
 
@@ -302,9 +323,9 @@ function showSection(section){
 }
 
 
-/* =========================================
+/* =======================================
    REGISTER FACE
-========================================= */
+======================================= */
 
 async function registerFace(){
 
@@ -344,8 +365,11 @@ async function registerFace(){
   );
 
   localStorage.setItem(
+
     studentName,
+
     JSON.stringify(descriptor)
+
   );
 
   alert(
@@ -356,9 +380,9 @@ async function registerFace(){
 }
 
 
-/* =========================================
-   START DETECTION
-========================================= */
+/* =======================================
+   START FACE DETECTION
+======================================= */
 
 async function startDetection(){
 
@@ -415,9 +439,9 @@ async function startDetection(){
       currentName =
       recognizedName;
 
-      /* =========================
-         ELOG MODE
-      ========================= */
+      /* ==========================
+         ELOG
+      ========================== */
 
       if(currentMode === "elog"){
 
@@ -430,9 +454,9 @@ async function startDetection(){
 
       }
 
-      /* =========================
-         REMARK MODE
-      ========================= */
+      /* ==========================
+         REMARKS
+      ========================== */
 
       if(currentMode === "remarks"){
 
@@ -450,9 +474,9 @@ async function startDetection(){
 }
 
 
-/* =========================================
+/* =======================================
    SAVE LOG
-========================================= */
+======================================= */
 
 function saveLog(name){
 
@@ -482,7 +506,10 @@ function saveLog(name){
 
   .then(function(data){
 
-    console.log(data);
+    console.log(
+      "Saved:",
+      data
+    );
 
   })
 
@@ -495,9 +522,9 @@ function saveLog(name){
 }
 
 
-/* =========================================
+/* =======================================
    SAVE REMARK
-========================================= */
+======================================= */
 
 function addRemark(){
 
