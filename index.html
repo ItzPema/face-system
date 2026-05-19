@@ -1,33 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student E-Log & Remarks System</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Face API -->
+  <title>Student Face System</title>
+
+  <!-- FACE API -->
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 
   <style>
+
     body{
-      font-family: Arial, sans-serif;
+      font-family:Arial;
       background:#f2f2f2;
       text-align:center;
       padding:20px;
       margin:0;
     }
 
+    .container{
+      background:white;
+      max-width:700px;
+      margin:auto;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
     h1{
       color:#222;
     }
 
-    .container{
-      max-width:700px;
-      margin:auto;
-      background:white;
-      padding:20px;
+    video{
+      width:320px;
+      height:240px;
+      border:3px solid black;
       border-radius:12px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
+      margin-top:20px;
+      background:black;
     }
 
     button{
@@ -36,44 +47,32 @@
       border-radius:8px;
       background:#007bff;
       color:white;
-      cursor:pointer;
       margin:5px;
+      cursor:pointer;
       font-size:16px;
-    }
-
-    button:hover{
-      opacity:0.9;
-    }
-
-    video{
-      width:320px;
-      height:240px;
-      border-radius:12px;
-      border:3px solid #333;
-      margin-top:20px;
-      background:black;
-    }
-
-    .section{
-      margin-top:20px;
-      padding:20px;
-      background:#fafafa;
-      border-radius:10px;
     }
 
     input, select{
       padding:10px;
       width:220px;
-      margin:10px;
+      margin:8px;
       border-radius:6px;
       border:1px solid #ccc;
     }
 
+    .section{
+      background:#fafafa;
+      margin-top:20px;
+      padding:20px;
+      border-radius:10px;
+    }
+
     #status{
-      margin-top:15px;
+      margin-top:10px;
       font-weight:bold;
       color:green;
     }
+
   </style>
 </head>
 
@@ -81,9 +80,32 @@
 
 <div class="container">
 
-  <h1>📚 Student E-Log & Remarks System</h1>
+  <h1>
+    📚 Student Face Recognition System
+  </h1>
 
-  <!-- Buttons -->
+  <!-- REGISTER FACE -->
+
+  <div class="section">
+
+    <h2>Register Student Face</h2>
+
+    <input
+      type="text"
+      id="studentName"
+      placeholder="Enter Student Name"
+    >
+
+    <br>
+
+    <button onclick="registerFace()">
+      Register Face
+    </button>
+
+  </div>
+
+  <!-- BUTTONS -->
+
   <button onclick="showSection('elog')">
     📋 E-Log Book
   </button>
@@ -94,16 +116,24 @@
 
   <br>
 
-  <!-- Camera -->
-  <video id="video" autoplay muted></video>
+  <!-- CAMERA -->
 
-  <!-- Status -->
+  <video
+    id="video"
+    autoplay
+    muted>
+  </video>
+
   <div id="status">
-    Loading Face Detection...
+    Loading AI Models...
   </div>
 
   <!-- ELOG -->
-  <div id="elogSection" class="section">
+
+  <div
+    id="elogSection"
+    class="section"
+  >
 
     <h2>E-Log Book</h2>
 
@@ -114,6 +144,7 @@
   </div>
 
   <!-- REMARKS -->
+
   <div
     id="remarksSection"
     class="section"
@@ -135,9 +166,13 @@
     <br>
 
     <select id="rating">
+
       <option>Good</option>
+
       <option>Average</option>
+
       <option>Bad</option>
+
     </select>
 
     <br>
@@ -153,7 +188,7 @@
 <script>
 
 /* =========================================
-   GOOGLE APPS SCRIPT URL
+   GOOGLE SCRIPT URL
 ========================================= */
 
 const SCRIPT_URL =
@@ -195,7 +230,7 @@ navigator.mediaDevices.getUserMedia({
 .catch(function(error){
 
   statusText.innerText =
-  "❌ Camera Permission Denied";
+  "❌ Camera Access Denied";
 
   console.log(error);
 
@@ -203,7 +238,7 @@ navigator.mediaDevices.getUserMedia({
 
 
 /* =========================================
-   LOAD FACE MODELS
+   LOAD AI MODELS
 ========================================= */
 
 Promise.all([
@@ -225,7 +260,7 @@ Promise.all([
 .then(function(){
 
   statusText.innerText =
-  "✅ Face Detection Ready";
+  "✅ Face Recognition Ready";
 
   startDetection();
 
@@ -268,51 +303,143 @@ function showSection(section){
 
 
 /* =========================================
-   FACE DETECTION
+   REGISTER FACE
+========================================= */
+
+async function registerFace(){
+
+  const studentName =
+  document.getElementById(
+    "studentName"
+  ).value;
+
+  if(studentName === ""){
+
+    alert("Enter Student Name");
+
+    return;
+
+  }
+
+  const detection =
+  await faceapi
+  .detectSingleFace(
+    video,
+    new faceapi.TinyFaceDetectorOptions()
+  )
+  .withFaceLandmarks()
+  .withFaceDescriptor();
+
+  if(!detection){
+
+    alert("No Face Detected");
+
+    return;
+
+  }
+
+  const descriptor =
+  Array.from(
+    detection.descriptor
+  );
+
+  localStorage.setItem(
+    studentName,
+    JSON.stringify(descriptor)
+  );
+
+  alert(
+    "✅ Face Registered for "
+    + studentName
+  );
+
+}
+
+
+/* =========================================
+   START DETECTION
 ========================================= */
 
 async function startDetection(){
 
   setInterval(async function(){
 
-    const detections =
-    await faceapi.detectAllFaces(
+    const detection =
+    await faceapi
+    .detectSingleFace(
       video,
       new faceapi.TinyFaceDetectorOptions()
-    );
+    )
+    .withFaceLandmarks()
+    .withFaceDescriptor();
 
-    if(detections.length > 0){
+    if(detection){
 
-      // TEMP NAME
-      const name = "Student";
+      let recognizedName =
+      "Unknown";
 
-      currentName = name;
+      for(
+        let i = 0;
+        i < localStorage.length;
+        i++
+      ){
 
-      /* =============================
+        const savedName =
+        localStorage.key(i);
+
+        const savedDescriptor =
+        JSON.parse(
+          localStorage.getItem(savedName)
+        );
+
+        const distance =
+        faceapi.euclideanDistance(
+
+          detection.descriptor,
+
+          new Float32Array(
+            savedDescriptor
+          )
+
+        );
+
+        if(distance < 0.5){
+
+          recognizedName =
+          savedName;
+
+        }
+
+      }
+
+      currentName =
+      recognizedName;
+
+      /* =========================
          ELOG MODE
-      ============================== */
+      ========================= */
 
       if(currentMode === "elog"){
 
         document.getElementById(
           "elogResult"
         ).innerText =
-        "✅ Face Detected: " + name;
+        "✅ " + recognizedName;
 
-        saveLog(name);
+        saveLog(recognizedName);
 
       }
 
-      /* =============================
+      /* =========================
          REMARK MODE
-      ============================== */
+      ========================= */
 
       if(currentMode === "remarks"){
 
         document.getElementById(
           "remarkResult"
         ).innerText =
-        "✅ Face Detected: " + name;
+        "✅ " + recognizedName;
 
       }
 
@@ -355,7 +482,7 @@ function saveLog(name){
 
   .then(function(data){
 
-    console.log("Saved:", data);
+    console.log(data);
 
   })
 
