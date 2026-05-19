@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student E-Log & Remarks System</title>
+
+  <!-- Face API -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#f2f2f2;
+      text-align:center;
+      padding:20px;
+      margin:0;
+    }
+
+    h1{
+      color:#222;
+    }
+
+    .container{
+      max-width:700px;
+      margin:auto;
+      background:white;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
+    button{
+      padding:12px 20px;
+      border:none;
+      border-radius:8px;
+      background:#007bff;
+      color:white;
+      cursor:pointer;
+      margin:5px;
+      font-size:16px;
+    }
+
+    button:hover{
+      opacity:0.9;
+    }
+
+    video{
+      width:320px;
+      height:240px;
+      border-radius:12px;
+      border:3px solid #333;
+      margin-top:20px;
+      background:black;
+    }
+
+    .section{
+      margin-top:20px;
+      padding:20px;
+      background:#fafafa;
+      border-radius:10px;
+    }
+
+    input, select{
+      padding:10px;
+      width:220px;
+      margin:10px;
+      border-radius:6px;
+      border:1px solid #ccc;
+    }
+
+    #status{
+      margin-top:15px;
+      font-weight:bold;
+      color:green;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>📚 Student E-Log & Remarks System</h1>
+
+  <!-- Buttons -->
+  <button onclick="showSection('elog')">
+    📋 E-Log Book
+  </button>
+
+  <button onclick="showSection('remarks')">
+    📝 Student Remarks
+  </button>
+
+  <br>
+
+  <!-- Camera -->
+  <video id="video" autoplay muted></video>
+
+  <!-- Status -->
+  <div id="status">
+    Loading Face Detection...
+  </div>
+
+  <!-- ELOG -->
+  <div id="elogSection" class="section">
+
+    <h2>E-Log Book</h2>
+
+    <h3 id="elogResult">
+      Waiting for face...
+    </h3>
+
+  </div>
+
+  <!-- REMARKS -->
+  <div
+    id="remarksSection"
+    class="section"
+    style="display:none;"
+  >
+
+    <h2>Student Remarks</h2>
+
+    <h3 id="remarkResult">
+      Waiting for face...
+    </h3>
+
+    <input
+      type="text"
+      id="remarkInput"
+      placeholder="Enter Remark"
+    >
+
+    <br>
+
+    <select id="rating">
+      <option>Good</option>
+      <option>Average</option>
+      <option>Bad</option>
+    </select>
+
+    <br>
+
+    <button onclick="addRemark()">
+      Save Remark
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+/* =========================================
+   GOOGLE APPS SCRIPT URL
+========================================= */
+
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbxd5vOnHhpAnrQz1FZRBwTCxlhGFTMJx8EvBQczybT4yioLnk25AG2HZXebZKTy5lrT/exec";
+
+
+/* =========================================
+   VARIABLES
+========================================= */
+
+const video =
+document.getElementById("video");
+
+const statusText =
+document.getElementById("status");
+
+let currentMode = "elog";
+
+let currentName = "";
+
+
+/* =========================================
+   OPEN CAMERA
+========================================= */
+
+navigator.mediaDevices.getUserMedia({
+  video:true
+})
+
+.then(function(stream){
+
+  video.srcObject = stream;
+
+  statusText.innerText =
+  "✅ Camera Started";
+
+})
+
+.catch(function(error){
+
+  statusText.innerText =
+  "❌ Camera Permission Denied";
+
+  console.log(error);
+
+});
+
+
+/* =========================================
+   LOAD FACE MODELS
+========================================= */
+
+Promise.all([
+
+  faceapi.nets.tinyFaceDetector.loadFromUri(
+    "https://justadudewhohacks.github.io/face-api.js/models"
+  ),
+
+  faceapi.nets.faceLandmark68Net.loadFromUri(
+    "https://justadudewhohacks.github.io/face-api.js/models"
+  ),
+
+  faceapi.nets.faceRecognitionNet.loadFromUri(
+    "https://justadudewhohacks.github.io/face-api.js/models"
+  )
+
+])
+
+.then(function(){
+
+  statusText.innerText =
+  "✅ Face Detection Ready";
+
+  startDetection();
+
+});
+
+
+/* =========================================
+   SWITCH SECTION
+========================================= */
+
+function showSection(section){
+
+  currentMode = section;
+
+  if(section === "elog"){
+
+    document.getElementById(
+      "elogSection"
+    ).style.display = "block";
+
+    document.getElementById(
+      "remarksSection"
+    ).style.display = "none";
+
+  }
+
+  if(section === "remarks"){
+
+    document.getElementById(
+      "elogSection"
+    ).style.display = "none";
+
+    document.getElementById(
+      "remarksSection"
+    ).style.display = "block";
+
+  }
+
+}
+
+
+/* =========================================
+   FACE DETECTION
+========================================= */
+
+async function startDetection(){
+
+  setInterval(async function(){
+
+    const detections =
+    await faceapi.detectAllFaces(
+      video,
+      new faceapi.TinyFaceDetectorOptions()
+    );
+
+    if(detections.length > 0){
+
+      // TEMP NAME
+      const name = "Student";
+
+      currentName = name;
+
+      /* =============================
+         ELOG MODE
+      ============================== */
+
+      if(currentMode === "elog"){
+
+        document.getElementById(
+          "elogResult"
+        ).innerText =
+        "✅ Face Detected: " + name;
+
+        saveLog(name);
+
+      }
+
+      /* =============================
+         REMARK MODE
+      ============================== */
+
+      if(currentMode === "remarks"){
+
+        document.getElementById(
+          "remarkResult"
+        ).innerText =
+        "✅ Face Detected: " + name;
+
+      }
+
+    }
+
+  },3000);
+
+}
+
+
+/* =========================================
+   SAVE LOG
+========================================= */
+
+function saveLog(name){
+
+  fetch(
+    SCRIPT_URL + "?sheet=Logs",
+    {
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":
+        "application/json"
+      },
+
+      body: JSON.stringify({
+        name:name
+      })
+
+    }
+  )
+
+  .then(function(response){
+
+    return response.text();
+
+  })
+
+  .then(function(data){
+
+    console.log("Saved:", data);
+
+  })
+
+  .catch(function(error){
+
+    console.log(error);
+
+  });
+
+}
+
+
+/* =========================================
+   SAVE REMARK
+========================================= */
+
+function addRemark(){
+
+  const remark =
+  document.getElementById(
+    "remarkInput"
+  ).value;
+
+  const rating =
+  document.getElementById(
+    "rating"
+  ).value;
+
+  fetch(
+    SCRIPT_URL + "?sheet=Remarks",
+    {
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":
+        "application/json"
+      },
+
+      body: JSON.stringify({
+
+        name: currentName,
+
+        remark: remark,
+
+        rating: rating
+
+      })
+
+    }
+  )
+
+  .then(function(response){
+
+    return response.text();
+
+  })
+
+  .then(function(data){
+
+    alert("✅ Remark Saved");
+
+    console.log(data);
+
+  })
+
+  .catch(function(error){
+
+    console.log(error);
+
+  });
+
+}
+
+</script>
+
+</body>
+</html>
