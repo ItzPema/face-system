@@ -341,39 +341,42 @@ function addRemark(){
     "rating"
   ).value;
 
+  const data = {
+
+    name: currentName,
+
+    remark: remark,
+
+    rating: rating
+
+  };
+
   fetch(
     "https://script.google.com/macros/s/AKfycbxd5vOnHhpAnrQz1FZRBwTCxlhGFTMJx8EvBQczybT4yioLnk25AG2HZXebZKTy5lrT/exec?sheet=Remarks",
     {
 
       method:"POST",
 
-      headers:{
-        "Content-Type":
-        "application/json"
-      },
-
-      body: JSON.stringify({
-
-        name: currentName,
-
-        remark: remark,
-
-        rating: rating
-
-      })
+      body: JSON.stringify(data)
 
     }
   )
 
-  .then(function(response){
+  .then(response => response.text())
 
-    return response.text();
+  .then(result => {
+
+    console.log(result);
+
+    alert("✅ Remark Saved");
 
   })
 
-  .then(function(data){
+  .catch(error => {
 
-    alert("✅ Remark Saved");
+    console.log(error);
+
+    alert("❌ Failed to Save");
 
   });
 
